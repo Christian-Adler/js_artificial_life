@@ -25,9 +25,45 @@ const create = (number, color) => {
   return group;
 };
 
+const rule = (particles1, particles2, g) => {
+  for (let i = 0; i < particles1.length; i++) {
+    const a = particles1[i];
+
+    let fx = 0;
+    let fy = 0;
+
+    for (let j = 0; j < particles2.length; j++) {
+      const b = particles1[j];
+
+      const dx = a.x - b.x;
+      const dy = a.y - b.y;
+      const d = Math.sqrt(dx * dx + dy * dy);
+      if (d > 0 && d < 80) { // restrict distance of interference
+        // mass for each particle assumed 1
+        const F = g * 1 / d;
+        fx += (F * dx);
+        fy += (F * dy);
+      }
+    }
+
+    a.vx = (a.vx + fx) * 0.5;
+    a.vy = (a.vy + fy) * 0.5;
+    a.x += a.vx;
+    a.y += a.vy;
+
+    //borders
+    if (a.x <= 0 || a.x >= 500)
+      a.vx *= -1;
+    if (a.y <= 0 || a.y >= 500)
+      a.vy *= -1;
+  }
+};
+
 const yellow = create(200, 'yellow');
 
 const update = () => {
+  rule(yellow, yellow, 1); // calc forces
+
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   draw(0, 0, 'black', 500);
 
