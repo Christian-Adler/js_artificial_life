@@ -40,14 +40,14 @@ const create = (number, color) => {
   return group;
 };
 
-const calcVelocity = (atoms1, atoms2, g) => {
-  for (let i = 0; i < atoms1.length; i++) {
+const calcVelocity = (particlesGroup1, particlesGroup2, g) => {
+  for (let i = 0; i < particlesGroup1.length; i++) {
     let fx = 0;
     let fy = 0;
-    const a = atoms1[i];
+    const a = particlesGroup1[i];
 
-    for (let j = 0; j < atoms2.length; j++) {
-      const b = atoms2[j];
+    for (let j = 0; j < particlesGroup2.length; j++) {
+      const b = particlesGroup2[j];
 
       // Don't interact with your self
       if (a.id === b.id)
@@ -65,7 +65,7 @@ const calcVelocity = (atoms1, atoms2, g) => {
         fy += F * dy;
       } else if (d > repulsionDistance && d < maxInterferenceDistance) {// restrict distance of interference
         // mass for each particle assumed 1
-        const F = (g * 1) / d;
+        const F = (-g /* *1 */) / d;
         fx += F * dx;
         fy += F * dy;
       }
@@ -101,28 +101,19 @@ const updatePositions = () => {
   }
 };
 
+// Create Groups of particles
 // const yellow = create(200, 'yellow');
-const yellow = create(300, 'yellow');
-// const red = create(200, 'red');
-// const green = create(200, 'green');
+const red = create(200, 'red');
+const green = create(200, 'green');
 
 const update = () => {
   // calc forces
-  calcVelocity(yellow, yellow, -0.1);
+  // calcVelocity(yellow, yellow, -0.1);
 
-  // calcVelocity(red, red, -0.1); // red attracts red
-  // calcVelocity(red, yellow, -0.01);
-  // calcVelocity(yellow, red, 0.01);
 
-  // calcVelocity(green, green, -0.32);
-  // calcVelocity(green, red, -0.17);
-  // calcVelocity(green, yellow, 0.34);
-  //
-  // calcVelocity(red, red, -0.1); // red attracts red
-  // calcVelocity(red, green, -0.34);
-  //
-  // calcVelocity(yellow, yellow, 0.15);
-  // calcVelocity(yellow, green, -0.2);
+  calcVelocity(red, red, 0.1); // red attracts red
+  calcVelocity(green, red, 0.04);
+  calcVelocity(red, green, -0.1);
 
   updatePositions();
 
