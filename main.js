@@ -3,11 +3,22 @@ const ctx = canvas.getContext('2d');
 
 const dim = 500;
 const maxV = Math.floor(dim / 4);
-const velocityFactor = 0.1;
+const velocityFactor = 0.5;
+const repulsionDistance = 10;
+const maxInterferenceDistance = 80;
+
+function* idMaker() {
+  let index = 0;
+  while (true) {
+    yield index++;
+  }
+}
+
+const idGen = idMaker();
 
 const particles = [];
 const particle = (x, y, color) => {
-  return {x, y, vx: 0, vy: 0, color};
+  return {x, y, vx: 0, vy: 0, color, id: idGen.next().value};
 };
 
 const draw = (x, y, color, size) => {
@@ -29,7 +40,7 @@ const create = (number, color) => {
   return group;
 };
 
-const rule = (atoms1, atoms2, g) => {
+const calcVelocity = (atoms1, atoms2, g) => {
   for (let i = 0; i < atoms1.length; i++) {
     let fx = 0;
     let fy = 0;
@@ -38,10 +49,21 @@ const rule = (atoms1, atoms2, g) => {
     for (let j = 0; j < atoms2.length; j++) {
       const b = atoms2[j];
 
+      // Don't interact with your self
+      if (a.id === b.id)
+        continue;
+
       const dx = a.x - b.x;
       const dy = a.y - b.y;
       const d = Math.sqrt(dx * dx + dy * dy);
-      if (d > 0 && d < 80) {// restrict distance of interference
+      if (d <= 0) {
+        fx += Math.random();
+        fy += Math.random();
+      } else if (d <= repulsionDistance) {
+        const F = 1 / d;
+        fx += F * dx;
+        fy += F * dy;
+      } else if (d > repulsionDistance && d < maxInterferenceDistance) {// restrict distance of interference
         // mass for each particle assumed 1
         const F = (g * 1) / d;
         fx += F * dx;
@@ -55,8 +77,11 @@ const rule = (atoms1, atoms2, g) => {
       a.vx = maxV * Math.sign(a.vx);
     if (Math.abs(a.vy) > maxV)
       a.vy = maxV * Math.sign(a.vy);
+  }
+};
 
-
+const updatePositions = () => {
+  for (const a of particles) {
     a.x += a.vx;
     a.y += a.vy;
 
@@ -76,25 +101,30 @@ const rule = (atoms1, atoms2, g) => {
   }
 };
 
-const yellow = create(200, 'yellow');
-const red = create(200, 'red');
-const green = create(200, 'green');
+// const yellow = create(200, 'yellow');
+const yellow = create(300, 'yellow');
+// const red = create(200, 'red');
+// const green = create(200, 'green');
 
 const update = () => {
   // calc forces
-  // rule(red, red, -0.1); // red attracts red
-  // rule(red, yellow, -0.01);
-  // rule(yellow, red, 0.01);
+  calcVelocity(yellow, yellow, -0.1);
 
-  rule(green, green, -0.32);
-  rule(green, red, -0.17);
-  rule(green, yellow, 0.34);
+  // calcVelocity(red, red, -0.1); // red attracts red
+  // calcVelocity(red, yellow, -0.01);
+  // calcVelocity(yellow, red, 0.01);
 
-  rule(red, red, -0.1); // red attracts red
-  rule(red, green, -0.34);
+  // calcVelocity(green, green, -0.32);
+  // calcVelocity(green, red, -0.17);
+  // calcVelocity(green, yellow, 0.34);
+  //
+  // calcVelocity(red, red, -0.1); // red attracts red
+  // calcVelocity(red, green, -0.34);
+  //
+  // calcVelocity(yellow, yellow, 0.15);
+  // calcVelocity(yellow, green, -0.2);
 
-  rule(yellow, yellow, 0.15);
-  rule(yellow, green, -0.2);
+  updatePositions();
 
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   draw(0, 0, 'black', 500);
