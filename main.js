@@ -1,8 +1,7 @@
 let canvas = document.getElementById("life");
 const ctx = canvas.getContext('2d');
 
-const dim = 500;
-const maxV = Math.floor(dim / 4);
+const maxV = 200;
 const velocityFactor = 0.5;
 const repulsionDistance = 10;
 const maxInterferenceDistance = 80;
@@ -25,15 +24,15 @@ const draw = (x, y, color, size) => {
   ctx.fillStyle = color;
   ctx.fillRect(x, y, size, size);
 };
-const random = () => {
-  const padding = dim / 10;
-  return Math.random() * (dim - 2 * padding) + padding
+const random = (max) => {
+  const padding = max / 10;
+  return Math.random() * (max - 2 * padding) + padding
 };
 
 const create = (number, color) => {
   const group = [];
   for (let i = 0; i < number; i++) {
-    let p = particle(random(), random(), color);
+    let p = particle(random(window.innerWidth), random(window.innerHeight), color);
     group.push(p);
     particles.push(p);
   }
@@ -101,10 +100,20 @@ const updatePositions = () => {
   }
 };
 
+function updateWorldSettings() {
+  if (canvas.height !== window.innerHeight || canvas.width !== window.innerWidth) {
+    canvas.height = window.innerHeight;
+    canvas.width = window.innerWidth;
+  }
+}
+
+updateWorldSettings();
+
 // Create Groups of particles
 // const yellow = create(200, 'yellow');
 const red = create(200, 'red');
 const green = create(200, 'green');
+
 
 const update = () => {
   // calc forces
@@ -117,8 +126,10 @@ const update = () => {
 
   updatePositions();
 
+  updateWorldSettings();
+
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-  draw(0, 0, 'black', 500);
+  // draw(0, 0, 'black', 500);
 
   for (const p of particles) {
     draw(p.x, p.y, p.color, 5);
