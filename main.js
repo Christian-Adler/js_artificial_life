@@ -1,10 +1,14 @@
-let canvas = document.getElementById("life");
-const ctx = canvas.getContext('2d');
+let particlesPerGroup = 200;
 
-const maxV = 200;
-const velocityFactor = 0.5;
+const particleSize = 3;
+const maxV = 10;
+const velocityFactor = 0.1; // 0.002;
 const repulsionDistance = 10;
-const maxInterferenceDistance = 80;
+const maxInterferenceDistance = 100;
+const fullForceDistance = (maxInterferenceDistance - repulsionDistance) / 2;
+
+const canvas = document.getElementById("life");
+const ctx = canvas.getContext('2d');
 
 function* idMaker() {
   let index = 0;
@@ -16,6 +20,8 @@ function* idMaker() {
 const idGen = idMaker();
 
 const particles = [];
+const particlesGroups = [];
+
 const particle = (x, y, color) => {
   return {x, y, vx: 0, vy: 0, color, id: idGen.next().value};
 };
@@ -24,6 +30,7 @@ const draw = (x, y, color, size) => {
   ctx.fillStyle = color;
   ctx.fillRect(x, y, size, size);
 };
+
 const random = (max) => {
   const padding = max / 10;
   return Math.random() * (max - 2 * padding) + padding
@@ -36,6 +43,7 @@ const create = (number, color) => {
     group.push(p);
     particles.push(p);
   }
+  particlesGroups.push(group);
   return group;
 };
 
@@ -58,19 +66,28 @@ const calcVelocity = (particlesGroup1, particlesGroup2, g) => {
       if (d <= 0) {
         fx += Math.random();
         fy += Math.random();
-      } else if (d <= repulsionDistance) {
+      } else if (d < repulsionDistance) {
         const F = 1 / d;
         fx += F * dx;
         fy += F * dy;
-      } else if (d > repulsionDistance && d < maxInterferenceDistance) {// restrict distance of interference
+      } else if (d > repulsionDistance && d < maxInterferenceDistance) { // restrict distance of interference
         // mass for each particle assumed 1
-        const F = (-g /* *1 */) / d;
+
+        let F = 0;
+        const dT = d - repulsionDistance;
+        if (dT <= fullForceDistance) {
+          F = -g * dT / fullForceDistance;
+        } else {
+          F = -g * (2 - dT / fullForceDistance);
+        }
+
+        // const F = (-g /* *1 */) / d;
         fx += F * dx;
         fy += F * dy;
       }
     }
-    a.vx = (a.vx + fx) * velocityFactor;
-    a.vy = (a.vy + fy) * velocityFactor;
+    a.vx = (a.vx + fx);
+    a.vy = (a.vy + fy);
     // limit v
     if (Math.abs(a.vx) > maxV)
       a.vx = maxV * Math.sign(a.vx);
@@ -81,59 +98,103 @@ const calcVelocity = (particlesGroup1, particlesGroup2, g) => {
 
 const updatePositions = () => {
   for (const a of particles) {
-    a.x += a.vx;
-    a.y += a.vy;
-
     // limits
     if (a.x <= 0 && Math.sign(a.vx) < 0) {
-      a.vx *= -1;
+      a.vx *= -Math.max(1, -a.x);
     }
-    if (a.x >= 500 && Math.sign(a.vx) > 0) {
-      a.vx *= -1;
+    if (a.x >= canvas.width && Math.sign(a.vx) > 0) {
+      a.vx *= -Math.max(1, a.x - canvas.width);
     }
     if (a.y <= 0 && Math.sign(a.vy) < 0) {
-      a.vy *= -1;
+      a.vy *= -Math.max(1, -a.y);
     }
-    if (a.y >= 500 && Math.sign(a.vy) > 0) {
-      a.vy *= -1;
+    if (a.y >= canvas.height && Math.sign(a.vy) > 0) {
+      a.vy *= -Math.max(1, a.y - canvas.height);
     }
+
+    a.x += a.vx * velocityFactor;
+    a.y += a.vy * velocityFactor;
   }
 };
 
-function updateWorldSettings() {
+const updateWorldSettings = () => {
   if (canvas.height !== window.innerHeight || canvas.width !== window.innerWidth) {
     canvas.height = window.innerHeight;
     canvas.width = window.innerWidth;
   }
-}
+};
 
 updateWorldSettings();
 
 // Create Groups of particles
 // const yellow = create(200, 'yellow');
-const red = create(200, 'red');
-const green = create(200, 'green');
+// const red = create(200, 'red');
+
+const red = create(particlesPerGroup, 'red');
+const orange = create(particlesPerGroup, 'orange');
+const yellow = create(particlesPerGroup, 'yellow');
+const green = create(particlesPerGroup, 'lightgreen');
+const cyan = create(particlesPerGroup, 'cyan');
+const purple = create(particlesPerGroup, 'magenta');
 
 
 const update = () => {
   // calc forces
-  // calcVelocity(yellow, yellow, -0.1);
+  // calcVelocity(yellow, yellow, 1);
 
+  // const t1 = new Date().getTime();
+  // calcVelocity(red, red, 0.1); // red attracts red
+  // calcVelocity(green, red, 0.04);
+  // calcVelocity(red, green, -0.1);
+  // calcVelocity(green, green, 0.01);
 
-  calcVelocity(red, red, 0.1); // red attracts red
-  calcVelocity(green, red, 0.04);
-  calcVelocity(red, green, -0.1);
+  for (let i = 0; i < particlesGroups.length; i++) {
+    const particlesGroup = particlesGroups[i];
+    calcVelocity(particlesGroup, particlesGroup, 1);
 
+  }
+  for (let i = 0; i < particlesGroups.length - 1; i++) {
+    const particlesGroup = particlesGroups[i];
+    const particlesGroup2 = particlesGroups[i + 1];
+    calcVelocity(particlesGroup, particlesGroup2, -0.0003);
+    calcVelocity(particlesGroup2, particlesGroup, 0.005);
+  }
+  for (let i = 0; i < particlesGroups.length - 2; i++) {
+    const particlesGroup = particlesGroups[i];
+    const particlesGroup2 = particlesGroups[i + 2];
+    calcVelocity(particlesGroup, particlesGroup2, -0.000002);
+  }
+  for (let i = 0; i < particlesGroups.length - 3; i++) {
+    const particlesGroup = particlesGroups[i];
+    const particlesGroup2 = particlesGroups[i + 3];
+    calcVelocity(particlesGroup, particlesGroup2, -0.000001);
+  }
+  for (let i = 0; i < particlesGroups.length - 4; i++) {
+    const particlesGroup = particlesGroups[i];
+    const particlesGroup2 = particlesGroups[i + 4];
+    calcVelocity(particlesGroup, particlesGroup2, -0.0000005);
+  }
+  for (let i = 0; i < particlesGroups.length - 5; i++) {
+    const particlesGroup = particlesGroups[i];
+    const particlesGroup2 = particlesGroups[i + 5];
+    calcVelocity(particlesGroup, particlesGroup2, -0.0000002);
+  }
+
+  // const t2 = new Date().getTime();
   updatePositions();
+  // const t3 = new Date().getTime();
 
   updateWorldSettings();
+  // const t4 = new Date().getTime();
 
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   // draw(0, 0, 'black', 500);
 
   for (const p of particles) {
-    draw(p.x, p.y, p.color, 5);
+    draw(p.x, p.y, p.color, particleSize);
   }
+  // const t5 = new Date().getTime();
+  // console.log(t2 - t1);
 
   requestAnimationFrame(update);
 }
