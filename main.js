@@ -84,7 +84,7 @@ const calcVelocity = (particlesGroup1, particlesGroup2, g) => {
         fx += Math.random();
         fy += Math.random();
       } else if (d < repulsionDistance) {
-        const F = 1 / d;
+        const F = 5 / d;
         fx += F * dx;
         fy += F * dy;
       } else if (d > repulsionDistance && d < maxInterferenceDistance) { // restrict distance of interference
@@ -176,8 +176,8 @@ const update = () => {
   for (let i = 0; i < particlesGroups.length; i++) {
     const particlesGroup = particlesGroups[i];
     calcVelocity(particlesGroup, particlesGroup, 1);
-
   }
+
   for (let i = 0; i < particlesGroups.length - 1; i++) {
     const particlesGroup = particlesGroups[i];
     const particlesGroup2 = particlesGroups[i + 1];
@@ -187,22 +187,22 @@ const update = () => {
   for (let i = 0; i < particlesGroups.length - 2; i++) {
     const particlesGroup = particlesGroups[i];
     const particlesGroup2 = particlesGroups[i + 2];
-    calcVelocity(particlesGroup, particlesGroup2, -0.000002);
+    calcVelocity(particlesGroup, particlesGroup2, -0.001);
   }
   for (let i = 0; i < particlesGroups.length - 3; i++) {
     const particlesGroup = particlesGroups[i];
     const particlesGroup2 = particlesGroups[i + 3];
-    calcVelocity(particlesGroup, particlesGroup2, -0.000001);
+    calcVelocity(particlesGroup, particlesGroup2, -0.001);
   }
   for (let i = 0; i < particlesGroups.length - 4; i++) {
     const particlesGroup = particlesGroups[i];
     const particlesGroup2 = particlesGroups[i + 4];
-    calcVelocity(particlesGroup, particlesGroup2, -0.0000005);
+    calcVelocity(particlesGroup, particlesGroup2, -0.001);
   }
   for (let i = 0; i < particlesGroups.length - 5; i++) {
     const particlesGroup = particlesGroups[i];
     const particlesGroup2 = particlesGroups[i + 5];
-    calcVelocity(particlesGroup, particlesGroup2, -0.0000002);
+    calcVelocity(particlesGroup, particlesGroup2, -0.001);
   }
 
   // const t2 = new Date().getTime();
