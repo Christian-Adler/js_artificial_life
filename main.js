@@ -1,4 +1,13 @@
+const urlParams = new URLSearchParams(window.location.search);
+
 let particlesPerGroup = 200;
+
+try {
+  const v = parseInt(urlParams.get("n"));
+  if (!isNaN(v))
+    particlesPerGroup = v;
+} catch (e) {
+}
 
 const particleSize = 3;
 const maxV = 10;
