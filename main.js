@@ -9,6 +9,7 @@ try {
 } catch (e) {
 }
 
+const wrapWorld = true;
 const particleSize = 3;
 const maxV = 10;
 const velocityFactor = 0.1; // 0.002;
@@ -41,14 +42,16 @@ const draw = (x, y, color, size) => {
 };
 
 const random = (max) => {
-  const padding = max / 10;
+  const padding = max / (wrapWorld ? 100 : 10);
   return Math.random() * (max - 2 * padding) + padding
 };
 
 const create = (number, color) => {
   const group = [];
   for (let i = 0; i < number; i++) {
-    let p = particle(random(window.innerWidth), random(window.innerHeight), color);
+    // at top/bottom/left/rigth
+    // const p = particle(window.innerWidth / 2 + (window.innerWidth / 2 - 20) * Math.sign(Math.random() - 0.5) /*random(window.innerWidth)*/, window.innerHeight / 2 + (window.innerHeight / 2 - 20) * Math.sign(Math.random() - 0.5) /* random(window.innerHeight)*/, color);
+    const p = particle(random(window.innerWidth), random(window.innerHeight), color);
     group.push(p);
     particles.push(p);
   }
@@ -69,8 +72,13 @@ const calcVelocity = (particlesGroup1, particlesGroup2, g) => {
       if (a.id === b.id)
         continue;
 
-      const dx = a.x - b.x;
-      const dy = a.y - b.y;
+      let dx = a.x - b.x;
+      if (wrapWorld && Math.abs(dx) > canvas.width * 0.5)
+        dx -= canvas.width * Math.sign(dx);
+      let dy = a.y - b.y;
+      if (wrapWorld && Math.abs(dy) > canvas.height * 0.5)
+        dy -= canvas.height * Math.sign(dy);
+
       const d = Math.sqrt(dx * dx + dy * dy);
       if (d <= 0) {
         fx += Math.random();
@@ -107,26 +115,30 @@ const calcVelocity = (particlesGroup1, particlesGroup2, g) => {
 
 const updatePositions = () => {
   for (const a of particles) {
-    // limits
-    if (a.x <= 0 && Math.sign(a.vx) < 0) {
-      a.vx *= -Math.max(1, -a.x);
-    }
-    if (a.x >= canvas.width && Math.sign(a.vx) > 0) {
-      a.vx *= -Math.max(1, a.x - canvas.width);
-    }
-    if (a.y <= 0 && Math.sign(a.vy) < 0) {
-      a.vy *= -Math.max(1, -a.y);
-    }
-    if (a.y >= canvas.height && Math.sign(a.vy) > 0) {
-      a.vy *= -Math.max(1, a.y - canvas.height);
+    if (!wrapWorld) {
+      // limits
+      if (a.x <= 0 && Math.sign(a.vx) < 0) {
+        a.vx *= -Math.max(1, -a.x);
+      }
+      if (a.x >= canvas.width && Math.sign(a.vx) > 0) {
+        a.vx *= -Math.max(1, a.x - canvas.width);
+      }
+      if (a.y <= 0 && Math.sign(a.vy) < 0) {
+        a.vy *= -Math.max(1, -a.y);
+      }
+      if (a.y >= canvas.height && Math.sign(a.vy) > 0) {
+        a.vy *= -Math.max(1, a.y - canvas.height);
+      }
     }
 
     a.x += a.vx * velocityFactor;
     a.y += a.vy * velocityFactor;
-    
-    // // wrap around
-    // a.x = (a.x + canvas.width) % canvas.width;
-    // a.y = (a.y + canvas.height) % canvas.height;
+
+    if (wrapWorld) {
+      // wrap around
+      a.x = (a.x + canvas.width) % canvas.width;
+      a.y = (a.y + canvas.height) % canvas.height;
+    }
   }
 };
 
