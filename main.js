@@ -123,6 +123,10 @@ const updatePositions = () => {
 
     a.x += a.vx * velocityFactor;
     a.y += a.vy * velocityFactor;
+    
+    // // wrap around
+    // a.x = (a.x + canvas.width) % canvas.width;
+    // a.y = (a.y + canvas.height) % canvas.height;
   }
 };
 
