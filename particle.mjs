@@ -2,14 +2,6 @@ import {getNextId} from "./utils.mjs";
 import {Settings} from "./settings.mjs";
 import {getRule} from "./rule.mjs";
 
-const wrapWorld = Settings.wrapWorld;
-const maxInterferenceDistance = Settings.maxInterferenceDistance;
-const velocityFactor = Settings.velocityFactor;
-const maxV = Settings.maxV;
-const particleSize = Settings.particleSize;
-const repulsionDistance = Settings.repulsionDistance;
-const fullForceDistance = Settings.fullForceDistance;
-
 const particles = [];
 
 
@@ -31,7 +23,7 @@ class Particle {
     this.fy = 0;
   }
 
-  updateVelocity() {
+  updateVelocity(maxV) {
     this.vx += this.fx;
     this.vy += this.fy;
     // limit v
@@ -40,9 +32,13 @@ class Particle {
       this.vx = maxV * Math.sign(this.vx);
     if (Math.abs(this.vy) > maxV)
       this.vy = maxV * Math.sign(this.vy);
+
+    const velocityFactor = Settings.velocityFactor;
+    this.vx *= velocityFactor;
+    this.vy *= velocityFactor;
   }
 
-  updatePosition(worldWidth, worldHeight) {
+  updatePosition(worldWidth, worldHeight, wrapWorld) {
     if (!wrapWorld) {
       // limits
       if (this.x <= 0 && Math.sign(this.vx) < 0) {
@@ -60,8 +56,8 @@ class Particle {
     }
 
 
-    this.x += this.vx * velocityFactor;
-    this.y += this.vy * velocityFactor;
+    this.x += this.vx;
+    this.y += this.vy;
 
     if (wrapWorld) {
       // wrap around
@@ -71,13 +67,14 @@ class Particle {
   }
 
   draw(ctx) {
+    const particleSize = Settings.particleSize;
     ctx.fillStyle = this.type;
     ctx.fillRect(this.x, this.y, particleSize, particleSize);
   }
 }
 
 
-const updateForce = (particle1, particle2, worldWidth, worldHeight, worldWidth2, worldHeight2) => {
+const updateForce = (particle1, particle2, worldWidth, worldHeight, worldWidth2, worldHeight2, maxInterferenceDistance, fullForceDistance, repulsionDistance, repulsionForce, wrapWorld) => {
   // Don't interact with your self
   if (particle1.id === particle2.id)
     return;
@@ -100,7 +97,7 @@ const updateForce = (particle1, particle2, worldWidth, worldHeight, worldWidth2,
     return;
   } else {
 
-    if (d > maxInterferenceDistance)// restrict distance of interference
+    if (d >= maxInterferenceDistance)// restrict distance of interference
       return;
     else if (d === repulsionDistance) // no resulting force
       return;
@@ -108,7 +105,7 @@ const updateForce = (particle1, particle2, worldWidth, worldHeight, worldWidth2,
 
 
   if (d < repulsionDistance) {
-    const F = 5 / d;
+    const F = repulsionForce / d;
     particle1.fx += F * dx;
     particle1.fy += F * dy;
     particle2.fx -= F * dx;
@@ -143,26 +140,33 @@ const updateForce = (particle1, particle2, worldWidth, worldHeight, worldWidth2,
 };
 
 const updateParticles = (worldWidth, worldHeight) => {
+  const wrapWorld = Settings.wrapWorld;
+
   // reset force
   for (const particle of particles) {
     particle.resetForce();
   }
 
   // calc force
+  const fullForceDistance = Settings.fullForceDistance;
+  const maxInterferenceDistance = Settings.maxInterferenceDistance;
+  const repulsionDistance = Settings.repulsionDistance;
+  const repulsionForce = Settings.repulsionForce;
   const worldWidth2 = worldWidth * 0.5
   const worldHeight2 = worldHeight * 0.5
   for (let i = 0; i < particles.length - 1; i++) {
     const particle1 = particles[i];
     for (let j = i + 1; j < particles.length; j++) {
       const particle2 = particles[j];
-      updateForce(particle1, particle2, worldWidth, worldHeight, worldWidth2, worldHeight2);
+      updateForce(particle1, particle2, worldWidth, worldHeight, worldWidth2, worldHeight2, maxInterferenceDistance, fullForceDistance, repulsionDistance, repulsionForce, wrapWorld);
     }
   }
 
   // update velocity / position
+  const maxV = Settings.maxV;
   for (const particle of particles) {
-    particle.updateVelocity();
-    particle.updatePosition(worldWidth, worldHeight);
+    particle.updateVelocity(maxV);
+    particle.updatePosition(worldWidth, worldHeight, wrapWorld);
   }
 };
 

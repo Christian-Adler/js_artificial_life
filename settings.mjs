@@ -3,8 +3,9 @@ export const Settings = {
   wrapWorld: true,
   particleSize: 3,
   maxV: 10,
-  velocityFactor: 0.1, // 0.002,
+  velocityFactor: 0.1, // fraction
   repulsionDistance: 10,
+  repulsionForce: 20,
   maxInterferenceDistance: 100,
   fullForceDistance: 45,
 };
